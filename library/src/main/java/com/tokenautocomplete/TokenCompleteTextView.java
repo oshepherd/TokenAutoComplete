@@ -49,7 +49,7 @@ import java.util.List;
  *
  * @author mgod
  */
-public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView implements TextView.OnEditorActionListener {
+public class TokenCompleteTextView extends MultiAutoCompleteTextView implements TextView.OnEditorActionListener {
     //When the token is deleted...
     public enum TokenDeleteStyle {
         _Parent, //...do the parent behavior, not recommended
@@ -75,6 +75,12 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
         }
     }
 
+    /** Adapter which returns views for tokens */
+    public interface ViewAdapter {
+        public View getViewForObject(Object object);
+        public Object defaultObject(String completionText);
+    }
+
     private Tokenizer tokenizer;
     private Object selectedObject;
     private TokenListener listener;
@@ -89,6 +95,7 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
     private boolean initialized = false;
     private boolean savingState = false;
     private boolean shouldFocusNext = false;
+    private ViewAdapter viewAdapter = null;
 
     private void resetListeners() {
         //reset listeners that get discarded when you set text
@@ -224,13 +231,23 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
         allowDuplicates = allow;
     }
 
+    public ViewAdapter getViewAdapter() {
+        return viewAdapter;
+    }
+
+    public void setViewAdapter(ViewAdapter viewAdapter) {
+        this.viewAdapter = viewAdapter;
+    }
+
     /**
      * A token view for the object
      *
      * @param object the object selected by the user from the list
      * @return a view to display a token in the text field for the object
      */
-    abstract protected View getViewForObject(Object object);
+    protected View getViewForObject(Object object) {
+        return viewAdapter.getViewForObject(object);
+    }
 
     /**
      * Provides a default completion when the user hits , and there is no item in the completion
@@ -239,7 +256,9 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
      * @param completionText the current text we are completing against
      * @return a best guess for what the user meant to complete
      */
-    abstract protected Object defaultObject(String completionText);
+    protected Object defaultObject(String completionText) {
+        return viewAdapter.defaultObject(completionText);
+    }
 
     protected String currentCompletionText() {
         if (hintVisible) return ""; //Can't have any text if the hint is visible
